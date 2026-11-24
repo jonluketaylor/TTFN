@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1b2523">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Family TV">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Family TV</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,700;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --room:#1b2523; --wood:#8a5a34; --wood-dark:#5c3a20; --glass:#050606;
+  --cream:#f3e7d0; --amber:#ffb23e; --muted:#a99b83;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--room);color:var(--cream);font-family:"Bricolage Grotesque",system-ui,sans-serif;display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));-webkit-tap-highlight-color:transparent}
+button,input{font:inherit}
+button:focus-visible,input:focus-visible{outline:3px solid var(--amber);outline-offset:2px}
+
+/* TV cabinet */
+.set{width:min(1100px,100%);background:linear-gradient(160deg,var(--wood),var(--wood-dark));border-radius:28px;padding:22px 22px 18px;box-shadow:0 30px 60px rgba(0,0,0,.55), inset 0 2px 0 rgba(255,255,255,.12)}
+.screen{position:relative;aspect-ratio:16/9;background:var(--glass);border-radius:22px / 26px;overflow:hidden;box-shadow:inset 0 0 60px rgba(0,0,0,.9), 0 0 0 6px #1a1008}
+video{width:100%;height:100%;object-fit:contain;background:#000;display:block}
+.screen::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 60%,rgba(0,0,0,.35) 100%)}
+
+.bug{position:absolute;top:14px;right:18px;z-index:3;font-weight:800;font-size:clamp(12px,1.8vw,20px);letter-spacing:.02em;background:rgba(0,0,0,.45);padding:4px 10px;border-radius:6px;color:var(--amber)}
+.lower{position:absolute;left:0;bottom:7%;z-index:3;max-width:70%;background:var(--amber);color:#1a1008;padding:10px 22px 10px 20px;border-radius:0 10px 10px 0;transform:translateX(-105%);transition:transform .5s ease}
+.lower.show{transform:none}
+.lower b{display:block;font-size:clamp(14px,2.4vw,28px);font-weight:800;line-height:1.1}
+.lower span{font-size:clamp(11px,1.4vw,15px);opacity:.8}
+
+/* message states on the glass */
+.msg{position:absolute;inset:0;z-index:4;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px;text-align:center;padding:24px;background:repeating-linear-gradient(0deg,#0b0d0d 0 3px,#101313 3px 6px)}
+.msg.on{display:flex}
+.msg h2{margin:0;font-size:clamp(20px,4vw,42px);font-weight:800}
+.msg p{margin:0;color:var(--muted);max-width:46ch}
+
+/* control strip */
+.strip{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px}
+.strip .grow{flex:1;min-width:140px}
+.knob{background:#2b1a0e;color:var(--cream);border:0;border-radius:999px;padding:10px 18px;font-weight:700;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.15),0 2px 0 #170d06}
+.knob:hover{background:#3a2412}
+.knob[aria-pressed="true"]{background:var(--amber);color:#1a1008}
+.next{font-size:14px;color:#ecd9b8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.next small{color:#c9b28b}
+
+/* setup */
+dialog{background:#fbf3e2;color:#2a1a0c;border:0;border-radius:18px;padding:28px;width:min(520px,92vw);box-shadow:0 30px 80px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(5,8,8,.75)}
+dialog h1{margin:0 0 6px;font-size:28px;font-weight:800}
+dialog p{margin:0 0 16px;color:#5b4630;font-size:15px;line-height:1.45}
+label{display:block;font-weight:700;font-size:14px;margin:14px 0 4px}
+input[type=text],input[type=password]{width:100%;padding:11px 12px;border:2px solid #cdb68f;border-radius:10px;background:#fff;color:#2a1a0c}
+.hint{font-size:13px;color:#6b553a;margin-top:4px}
+.go{margin-top:20px;width:100%;background:#2b1a0e;color:#fbf3e2;border:0;border-radius:12px;padding:14px;font-weight:800;font-size:17px;cursor:pointer}
+.go:hover{background:#3a2412}
+.err{color:#a32211;font-weight:700;margin-top:12px;min-height:1.2em;font-size:14px}
+details{margin-top:14px;font-size:14px;color:#5b4630}
+details summary{cursor:pointer;font-weight:700}
+details ol{padding-left:20px;line-height:1.5}
+body.idle .strip{opacity:0;transition:opacity .4s}
+body.idle{cursor:none}
+@media (max-width:640px){
+  .set{padding:10px 10px 12px;border-radius:18px}
+  .screen{border-radius:12px / 14px;box-shadow:inset 0 0 30px rgba(0,0,0,.9),0 0 0 3px #1a1008}
+  .strip{gap:8px;margin-top:12px}
+  .knob{padding:10px 14px;font-size:14px}
+  .next{flex-basis:100%;order:9;font-size:13px}
+  dialog{padding:20px}
+  input[type=text],input[type=password]{font-size:16px}
+}
+@media (prefers-reduced-motion:reduce){.lower{transition:none}}
+</style>
+</head>
+<body>
+<main class="set">
+  <div class="screen" id="screen">
+    <video id="v" playsinline></video>
+    <div class="bug" id="bug">Family TV</div>
+    <div class="lower" id="lower" aria-live="polite"><b id="ltTitle"></b><span id="ltSub"></span></div>
+    <div class="msg on" id="msg"><h2 id="msgH">Family TV</h2><p id="msgP">Press “Set up” to connect your Google Drive folder.</p></div>
+  </div>
+  <div class="strip" id="strip">
+    <button class="knob" id="prev" title="Previous (←)">Prev</button>
+    <button class="knob" id="play" title="Play / pause (space)">Pause</button>
+    <button class="knob" id="nextBtn" title="Next (→)">Next</button>
+    <button class="knob" id="shuffle" aria-pressed="true" title="Shuffle (S)">Shuffle</button>
+    <button class="knob" id="fs" title="Fullscreen (F)">Fullscreen</button>
+    <div class="next grow" id="upnext"></div>
+    <button class="knob" id="setup">Set up</button>
+  </div>
+</main>
+
+<dialog id="dlg">
+  <h1>Set up your station</h1>
+  <p>Point Family TV at the Drive folder that holds your family movies. It plays everything in it, including subfolders, and starts over when it reaches the end.</p>
+  <label for="name">Station name</label>
+  <input type="text" id="name" placeholder="Taylor Family TV">
+  <label for="folder">Google Drive folder link</label>
+  <input type="text" id="folder" placeholder="https://drive.google.com/drive/folders/…">
+  <div class="hint">The folder needs sharing set to “Anyone with the link can view.”</div>
+  <label for="key">Google API key</label>
+  <input type="password" id="key" placeholder="AIza…" autocomplete="off">
+  <div class="hint">Stored only in this browser. Free to create, steps below.</div>
+  <details>
+    <summary>How to get an API key (about 3 minutes)</summary>
+    <ol>
+      <li>Open console.cloud.google.com and create a project.</li>
+      <li>Go to APIs &amp; Services → Library, search “Google Drive API,” and click Enable.</li>
+      <li>Go to APIs &amp; Services → Credentials → Create credentials → API key.</li>
+      <li>Optional but smart: restrict the key to the Google Drive API.</li>
+      <li>In Drive, right-click your movies folder → Share → General access → Anyone with the link.</li>
+    </ol>
+  </details>
+  <div class="err" id="err" role="alert"></div>
+  <button class="go" id="start">Start broadcasting</button>
+</dialog>
+
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const v = $('v'), dlg = $('dlg');
+  let key = '', list = [], order = [], pos = 0, shuffle = true, lowerTimer, idleTimer;
+
+  const store = {
+    get(k){ try { return localStorage.getItem(k); } catch(e){ return null; } },
+    set(k,val){ try { localStorage.setItem(k,val); } catch(e){} }
+  };
+
+  const clean = n => n.replace(/\.[a-z0-9]{2,4}$/i,'').replace(/[_]+/g,' ').trim();
+  const folderId = s => { const m = s.match(/folders\/([\w-]+)/) || s.match(/[?&]id=([\w-]+)/) || s.match(/^([\w-]{15,})$/); return m ? m[1] : null; };
+
+  function showMsg(h,p){ $('msgH').textContent = h; $('msgP').textContent = p; $('msg').classList.add('on'); }
+  function hideMsg(){ $('msg').classList.remove('on'); }
+
+  async function listFolder(id, depth, acc){
+    let token = '';
+    do {
+      const q = encodeURIComponent("'" + id + "' in parents and trashed=false");
+      const url = 'https://www.googleapis.com/drive/v3/files?q=' + q +
+        '&fields=nextPageToken,files(id,name,mimeType)&pageSize=1000&supportsAllDrives=true&includeItemsFromAllDrives=true&key=' + encodeURIComponent(key) +
+        (token ? '&pageToken=' + encodeURIComponent(token) : '');
+      const r = await fetch(url);
+      if (!r.ok) {
+        let m = 'Google said no (' + r.status + ').';
+        try { const j = await r.json(); if (j.error && j.error.message) m = j.error.message; } catch(e){}
+        throw new Error(m);
+      }
+      const j = await r.json();
+      for (const f of j.files || []) {
+        if (f.mimeType === 'application/vnd.google-apps.folder') { if (depth < 3) await listFolder(f.id, depth + 1, acc); }
+        else if (f.mimeType && f.mimeType.indexOf('video/') === 0) acc.push(f);
+      }
+      token = j.nextPageToken || '';
+    } while (token);
+    return acc;
+  }
+
+  function buildOrder(){
+    order = list.map((_, i) => i);
+    if (shuffle) {
+      for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+    } else {
+      order.sort((a, b) => list[a].name.localeCompare(list[b].name, undefined, {numeric:true}));
+    }
+  }
+
+  function src(f){ return 'https://www.googleapis.com/drive/v3/files/' + f.id + '?alt=media&key=' + encodeURIComponent(key); }
+
+  function lowerThird(f){
+    $('ltTitle').textContent = clean(f.name);
+    $('ltSub').textContent = $('bug').textContent + ' · ' + (pos + 1) + ' of ' + order.length;
+    $('lower').classList.add('show');
+    clearTimeout(lowerTimer);
+    lowerTimer = setTimeout(() => $('lower').classList.remove('show'), 7000);
+  }
+
+  function updateNext(){
+    const n = list[order[(pos + 1) % order.length]];
+    $('upnext').innerHTML = order.length > 1 ? '<small>Up next:</small> ' + clean(n.name).replace(/</g,'&lt;') : '';
+  }
+
+  function playAt(i, skipCount){
+    if (!order.length) return;
+    pos = ((i % order.length) + order.length) % order.length;
+    const f = list[order[pos]];
+    hideMsg();
+    v.src = src(f);
+    v.play().catch(() => {});
+    lowerThird(f);
+    updateNext();
+    store.set('ftv_last', f.id);
+  }
+
+  let failures = 0;
+  v.addEventListener('ended', () => { failures = 0; if (pos + 1 >= order.length) { buildOrder(); playAt(0); } else playAt(pos + 1); });
+  v.addEventListener('playing', () => { failures = 0; $('play').textContent = 'Pause'; });
+  v.addEventListener('pause', () => { $('play').textContent = 'Play'; });
+  v.addEventListener('error', () => {
+    failures++;
+    if (failures >= Math.min(order.length, 5)) {
+      showMsg('We’ve lost the signal', 'These videos won’t play. Check that the folder is shared with “Anyone with the link,” and that the files are MP4 or another format your browser supports.');
+      return;
+    }
+    playAt(pos + 1);
+  });
+
+  async function start(){
+    $('err').textContent = '';
+    const id = folderId($('folder').value.trim());
+    key = $('key').value.trim();
+    if (!id) { $('err').textContent = 'That doesn’t look like a Drive folder link. Copy it from the folder’s Share dialog.'; return; }
+    if (!key) { $('err').textContent = 'Paste your Google API key to continue.'; return; }
+    $('start').disabled = true; $('start').textContent = 'Tuning in…';
+    try {
+      const found = await listFolder(id, 0, []);
+      if (!found.length) throw new Error('No videos found in that folder. Check the sharing setting and that it contains video files.');
+      list = found;
+      const name = $('name').value.trim() || 'Family TV';
+      $('bug').textContent = name; document.title = name;
+      store.set('ftv_name', name); store.set('ftv_folder', $('folder').value.trim()); store.set('ftv_key', key);
+      buildOrder();
+      let startAt = 0;
+      const last = store.get('ftv_last');
+      if (last) { const li = list.findIndex(f => f.id === last); if (li >= 0) { const oi = order.indexOf(li); if (oi >= 0) startAt = oi; } }
+      dlg.close();
+      playAt(startAt);
+    } catch (e) {
+      $('err').textContent = (e instanceof TypeError)
+        ? 'Couldn’t reach Google. Check your connection, turn off any content blocker, and make sure your API key isn’t restricted to a different website address.'
+        : e.message;
+    } finally {
+      $('start').disabled = false; $('start').textContent = 'Start broadcasting';
+    }
+  }
+
+  $('start').addEventListener('click', start);
+  $('setup').addEventListener('click', () => dlg.showModal());
+  $('prev').addEventListener('click', () => playAt(pos - 1));
+  $('nextBtn').addEventListener('click', () => playAt(pos + 1));
+  $('play').addEventListener('click', () => { v.paused ? v.play() : v.pause(); });
+  $('shuffle').addEventListener('click', () => {
+    shuffle = !shuffle; $('shuffle').setAttribute('aria-pressed', shuffle);
+    if (list.length) { const cur = order[pos]; buildOrder(); pos = Math.max(0, order.indexOf(cur)); updateNext(); }
+  });
+  function toggleFS(){
+    const d = document.documentElement;
+    if (document.fullscreenElement) document.exitFullscreen();
+    else if (d.requestFullscreen) d.requestFullscreen();
+    else if (v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+  }
+  $('fs').addEventListener('click', toggleFS);
+  v.addEventListener('click', () => { v.paused ? v.play() : v.pause(); });
+
+  document.addEventListener('keydown', e => {
+    if (dlg.open || /INPUT/.test(document.activeElement.tagName)) return;
+    if (e.key === 'ArrowRight') playAt(pos + 1);
+    else if (e.key === 'ArrowLeft') playAt(pos - 1);
+    else if (e.key === ' ') { e.preventDefault(); v.paused ? v.play() : v.pause(); }
+    else if (e.key.toLowerCase() === 'f') toggleFS();
+    else if (e.key.toLowerCase() === 's') $('shuffle').click();
+  });
+
+  function wake(){ document.body.classList.remove('idle'); clearTimeout(idleTimer); if (list.length && !dlg.open) idleTimer = setTimeout(() => document.body.classList.add('idle'), 3500); }
+  ['mousemove','keydown','touchstart'].forEach(ev => document.addEventListener(ev, wake));
+
+  // Restore saved setup
+  $('name').value = store.get('ftv_name') || '';
+  $('folder').value = store.get('ftv_folder') || '';
+  $('key').value = store.get('ftv_key') || '';
+  if ($('folder').value && $('key').value) showMsg($('name').value || 'Family TV', 'Press “Set up,” then “Start broadcasting” to go live. (Browsers need one click before they allow sound.)');
+  dlg.showModal();
+})();
+</script>
+</body>
+</html>
